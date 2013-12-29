@@ -30,9 +30,9 @@
 #define RECEIVER_TIM_COUNTER 1000
 #define RECEIVER_TIM_MICROSECOND 100
 
-extern __IO u16 receiver_position[8];
-extern __IO u16 receiver_position_read[8];
-extern __IO u16 receiver_count;
+extern volatile u16 receiver_position[8];
+extern volatile u16 receiver_position_read[8];
+extern volatile u16 receiver_count;
 
 void receiver_gpio_init();
 void receiver_init();

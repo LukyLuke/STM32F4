@@ -21,14 +21,15 @@
 // Servo resolution:
 // The servo needs a signal from 1-2 ms and a beginning high of 1ms
 // The timer is running on 1MHz; a persiod of 20000 is a tick every 20µs
-#define SERVO_TIM_PRESCALE 42
+// SystemCoreClock is set to 168 MHz for STM32F4xx Devices Revision A.
+#define SERVO_TIM_PRESCALE 168
 #define SERVO_TIM_PERIOD 20
 #define SERVO_TIM_COUNTER 1000
 #define SERVO_TIM_MICROSECOND 100
 
-extern __IO float servo_angle[4];
-extern __IO u16 servo_period[4];
-extern __IO u16 servo_count;
+extern volatile float servo_angle[4];
+extern volatile u16 servo_period[4];
+extern volatile u16 servo_count;
 
 void servo_gpio_init();
 void servo_init();

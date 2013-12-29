@@ -1,9 +1,9 @@
 
 #include "../inc/servo.h"
 
-__IO float servo_angle[4] = { 0, 0, 0, 0 };
-__IO u16 servo_period[4] = { 0, 0, 0, 0 };
-__IO u16 servo_count = 0;
+volatile float servo_angle[4] = { 0, 0, 0, 0 };
+volatile u16 servo_period[4] = { 0, 0, 0, 0 };
+volatile u16 servo_count = 0;
 
 void servo_gpio_init() {
 	GPIO_InitTypeDef GPIO_Config;
@@ -21,6 +21,8 @@ void servo_gpio_init() {
 }
 
 void servo_init() {
+	u16 prescalerValue = (u16)((SystemCoreClock / 2) / SERVO_TIM_PRESCALE) - 1;
+	
 	// ---------- Interrupt configuration for the servos on TIM3 ---------- //
 	NVIC_InitTypeDef NVIC_InitStructure;
 	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
@@ -33,7 +35,7 @@ void servo_init() {
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 	
 	// STM32F4 runs at 84 MHz and we need 50Hz (20 milliseconds)
-	TIM_TimeBaseStructure.TIM_Prescaler = SERVO_TIM_PRESCALE - 1; // Prescale the timer to 1 MHz
+	TIM_TimeBaseStructure.TIM_Prescaler = prescalerValue; // Prescale the timer to 1 MHz
 	TIM_TimeBaseStructure.TIM_Period = SERVO_TIM_PERIOD - 1; // 1 Hz / 20 = 50000 Hz (20000 ms)
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;

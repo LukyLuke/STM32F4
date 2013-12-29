@@ -20,6 +20,7 @@ int main(void) {
 	// Initialize all required GPIO ports and registers
 	init_gpio();
 	servo_gpio_init();
+	receiver_gpio_init();
 	
 	// Interrupt priority: 2 bits for priority and 2 bits for sub priority
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3, ENABLE);
@@ -27,7 +28,9 @@ int main(void) {
 	
 	// Initialize all systems, inetrrupts, etc.
 	servo_init();
+	receiver_init();
 	
+	// Just initialize some dummy LED values to toggle them for testing
 	GPIO_SetBits(LED_REGISTER, LED3 | LED4);
 	GPIO_ResetBits(LED_REGISTER, LED1 | LED2);
 	

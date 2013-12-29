@@ -1,9 +1,9 @@
 
 #include "../inc/receiver.h"
 
-__IO u16 receiver_position[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-__IO u16 receiver_position_read[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-__IO u16 receiver_count = 0;
+volatile u16 receiver_position[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+volatile u16 receiver_position_read[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+volatile u16 receiver_count = 0;
 
 void receiver_gpio_init() {
 	GPIO_InitTypeDef GPIO_Config;
