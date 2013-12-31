@@ -28,6 +28,10 @@
 #include "../lib/inc/peripherals/stm32f4xx_gpio.h"
 #include "../lib/inc/peripherals/stm32f4xx_spi.h"
 
+// TODO: Make this configurabe on each command through a different API
+// use sensors.h for this
+#define LIS302DL_SPI  SPI1
+
 // see http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/CD00135460.pdf
 
 /**
@@ -57,7 +61,7 @@
  * @param void
  * @retval void
  */
-u32 LIS302DL_TIMEOUT_UserCallback(void);
+uint32_t LIS302DL_TIMEOUT_UserCallback(void);
 /* #define LIS302DL_USE_CUSTOM_TIMEOUT_CALLBACK */
 
 /**** BEGIN: LIS302DL-Registers ****/
@@ -667,7 +671,55 @@ u32 LIS302DL_TIMEOUT_UserCallback(void);
  * 
  *  Sent by the SPI Master device in order to generate the clock to the slave device
  */
-#define LIS302DL_DUMMY_BYTE                 ((uint8_t)0x00)
+#define LIS302DL_DUMMY_BYTE                ((uint8_t)0x00)
+
+/**
+ * @def LIS302DL_BIT0
+ * @brief Bit at position 0 from left side
+ */
+#define LIS302DL_BIT0                     0x80
+
+/**
+ * @def LIS302DL_BIT1
+ * @brief Bit at position 1 from left side
+ */
+#define LIS302DL_BIT1                     0x40
+
+/**
+ * @def LIS302DL_BIT2
+ * @brief Bit at position 2 from left side
+ */
+#define LIS302DL_BIT2                     0x20
+
+/**
+ * @def LIS302DL_BIT3
+ * @brief Bit at position 3 from left side
+ */
+#define LIS302DL_BIT3                     0x10
+
+/**
+ * @def LIS302DL_BIT4
+ * @brief Bit at position 4 from left side
+ */
+#define LIS302DL_BIT4                     0x08
+
+/**
+ * @def LIS302DL_BIT5
+ * @brief Bit at position 5 from left side
+ */
+#define LIS302DL_BIT5                     0x04
+
+/**
+ * @def LIS302DL_BIT6
+ * @brief Bit at position 6 from left side
+ */
+#define LIS302DL_BIT6                     0x02
+
+/**
+ * @def LIS302DL_BIT7
+ * @brief Bit at position 7 from left side
+ */
+#define LIS302DL_BIT7                     0x01
 
 /**
  * @typedef LIS302DL_Config
@@ -676,14 +728,14 @@ u32 LIS302DL_TIMEOUT_UserCallback(void);
  *  Use this to read and write the configuration on a LIS302DL sensor.
  */
 typedef struct {
-	bool DataRate;       ///< Data rate selection (0: 100Hz, 1: 400Hz)
-	bool PowerDown;      ///< Power mode selection (0: power down mode, 1: active mode)
-	bool FullScale;      ///< Measurement rate selection (0: Measurement rate to 2.3, 1: Measurement rate to 9.2)
-	bool SelfTest_P;     ///< SelfTest P-Mode (0: SelfTest disabled, 1: Various output values on all axis)
-	bool SelfTest_M;     ///< SelfTest M-Mode (0: SelfTest disabled, 1: Invert the sign on all axis values)
-	bool ZAxisEnabled;   ///< Z-Axis (0: Disabled, 1: Enabled)
-	bool YAxisEnabled;   ///< Y-Axis (0: Disabled, 1: Enabled)
-	bool XAxisEnabled;   ///< X-Axis (0: Disabled, 1: Enabled)
+	uint8_t DataRate : 1;       ///< Data rate selection (0: 100Hz, 1: 400Hz)
+	uint8_t PowerDown : 1;      ///< Power mode selection (0: power down mode, 1: active mode)
+	uint8_t FullScale : 1;      ///< Measurement rate selection (0: Measurement rate to 2.3, 1: Measurement rate to 9.2)
+	uint8_t SelfTest_P : 1;     ///< SelfTest P-Mode (0: SelfTest disabled, 1: Various output values on all axis)
+	uint8_t SelfTest_M : 1;     ///< SelfTest M-Mode (0: SelfTest disabled, 1: Invert the sign on all axis values)
+	uint8_t ZAxisEnabled : 1;   ///< Z-Axis (0: Disabled, 1: Enabled)
+	uint8_t YAxisEnabled : 1;   ///< Y-Axis (0: Disabled, 1: Enabled)
+	uint8_t XAxisEnabled : 1;   ///< X-Axis (0: Disabled, 1: Enabled)
 } LIS302DL_Config;
 
 
@@ -696,42 +748,85 @@ typedef struct {
 
 /**
  * @brief  Write the configuration to the LIS302DL device
- * @param  LIS302DL_Config *pConfig  Pointer to the configuration to write
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pConfig  Pointer to the configuration to write
  * @retval void
  */
-void LIS302DL_Configure(const LIS302DL_Config *config);
+void LIS302DL_Init(SPI_TypeDef* spi, const LIS302DL_Config* config);
 
 /**
  * @brief  Read out the configuration form a LIS302DL
- * @param  LIS302DL_Config *pConfig  Pointer to write the configuration to
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pConfig  Pointer to write the configuration to
  * @retval void
  */
-void LIS302DL_GetConfiguration(volatile LIS302DL_Config *config);
+void LIS302DL_GetConfiguration(SPI_TypeDef* spi, volatile LIS302DL_Config* config);
 
 /**
  * @brief  Read data from a LIS302DL.
- * @param  u8 *pBuffer  Pointer to the buffer for the received data
- * @param  u8 readAddr  LIS302DL Internal address from the register to read from
- * @param  u16 numByteToRead  Number of bytes to read from the LIS302DL
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pBuffer  Pointer to the buffer for the received data
+ * @param  readAddr  LIS302DL Internal address from the register to read from
+ * @param  numByteToRead  Number of bytes to read from the LIS302DL
  * @retval void
  */
-void LIS302DL_Read(u8 *pBuffer, u8 readAddr, u16 numByteToRead);
+void LIS302DL_Read(SPI_TypeDef* spi, uint8_t* pBuffer, uint8_t readAddr, uint16_t numByteToRead);
 
 /**
  * @brief  Writes one byte to the LIS302DL.
- * @param  u8 *pBuffer  pointer to the buffer  containing the data to be written to the LIS302DL.
- * @param  u8 writeAddr  LIS302DL's internal address to write to.
- * @param  u16 NumByteToWrite  Number of bytes to write.
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pBuffer  Pointer to the buffer  containing the data to be written to the LIS302DL.
+ * @param  writeAddr  LIS302DL's internal address to write to.
+ * @param  NumByteToWrite  Number of bytes to write.
  * @retval void
  */
-void LIS302DL_Write(u8 *pBuffer, u8 writeAddr, u16 numByteToWrite);
+void LIS302DL_Write(SPI_TypeDef* spi, uint8_t* pBuffer, uint8_t writeAddr, uint16_t numByteToWrite);
 
 /**
  * @brief  Read the LIS302DL output register and calculate the acceleration based like:
  *         ACC[mg] = SENSITIVITY * (out_h * 256 + out_l) / 16 (12 bit rappresentation)
- * @param i32 *out  Buffer to store data
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param out  Pointer to the buffer to store the received data
  * @retval void
  */
-void LIS302DL_Acceleration(i32 *out);
+void LIS302DL_Acceleration(SPI_TypeDef* spi, int32_t* out);
+
+/**
+ * @brief  Rebot the memory content of a LIS302DL device
+ *         This is done by setting BOOT in CTRL_REG2
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @retval None
+ */
+void LIS302DL_Reboot(SPI_TypeDef* spi);
+
+/**
+ * @brief  Change the sensor scale to full/halve scale
+ *         In full scale the measurement rate is ±2.3g (default), otherwise it is ±9.2g
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  fullScaleEnable Set to true to change to ±2.3g mode or false if you want ±9.2g
+ * @retval None
+ */
+void LIS302DL_ChangeScaleMode(SPI_TypeDef* spi, uint8_t fullScaleEnable);
+
+/**
+ * @brief  Change the sensor data rate to 100Hz or 400Hz
+ *         For full speed 400Hz (defalut), set enableHighSpeed to true, otherwise to false
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  enableHighSpeed Enable for 400Hz, disable for 100Hz data rate
+ * @retval None
+ */
+void LIS302D_ChangeDataRate(SPI_TypeDef* spi, uint8_t enableHighSpeed);
+
+/**
+ * @brief  Change the sensors PowerDown control
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  enableActiveMode Set to true to enable the sensors active mode, else the sensor is in power down control
+ * @retval None
+ */
+void LIS302D_ChangePowerControl(SPI_TypeDef* spi, uint8_t enableActiveMode);
+
+
+
+
 
 #endif // LIS302DL_H

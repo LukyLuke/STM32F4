@@ -23,37 +23,62 @@
 #include "../inc/lis302dl.h"
 
 /**** Private declarations ****/
-static u8 _LIS302DL_SendByte(u8 byte);
+
+static uint8_t _LIS302DL_SendByte(SPI_TypeDef* spi, uint8_t byte);
 
 
-/**** Public methods ****/
+/**** Public implementations ****/
 
-void LIS302DL_Configure(const LIS302DL_Config *pConfig) {
+void LIS302DL_Init(SPI_TypeDef* spi, const LIS302DL_Config* pConfig) {
+	// Map the configuration to be always BigEndian
+	uint8_t cnf = 0x00;
+	cnf |= pConfig->DataRate ? LIS302DL_BIT0 : 0x00;
+	cnf |= pConfig->PowerDown ? LIS302DL_BIT1 : 0x00;
+	cnf |= pConfig->FullScale ? LIS302DL_BIT2 : 0x00;
+	cnf |= pConfig->SelfTest_P ? LIS302DL_BIT3 : 0x00;
+	cnf |= pConfig->SelfTest_M ? LIS302DL_BIT4 : 0x00;
+	cnf |= pConfig->ZAxisEnabled ? LIS302DL_BIT5 : 0x00;
+	cnf |= pConfig->YAxisEnabled ? LIS302DL_BIT6 : 0x00;
+	cnf |= pConfig->XAxisEnabled ? LIS302DL_BIT7 : 0x00;
 	
+	LIS302DL_Write(&cnf, LIS302DL_CTRL_REG1_ADDR, 1);
 }
 
-void LIS302DL_GetConfiguration(volatile LIS302DL_Config *pConfig) {
+
+void LIS302DL_GetConfiguration(SPI_TypeDef* spi, volatile LIS302DL_Config* pConfig) {
+	uint8_t cnf = 0x00;
+	LIS302DL_Read(&cnf, LIS302DL_CTRL_REG1_ADDR, 1);
 	
+	// Map received data into the configuration; Data is delivered in BigEndian
+	pConfig->DataRate = cnf & LIS302DL_BIT0 ? 0x01 : 0x00;
+	pConfig->PowerDown = cnf & LIS302DL_BIT1 ? 0x01 : 0x00;
+	pConfig->FullScale = cnf & LIS302DL_BIT2 ? 0x01 : 0x00;
+	pConfig->SelfTest_P = cnf & LIS302DL_BIT3 ? 0x01 : 0x00;
+	pConfig->SelfTest_M = cnf & LIS302DL_BIT4 ? 0x01 : 0x00;
+	pConfig->ZAxisEnabled = cnf & LIS302DL_BIT5 ? 0x01 : 0x00;
+	pConfig->YAxisEnabled = cnf & LIS302DL_BIT6 ? 0x01 : 0x00;
+	pConfig->XAxisEnabled = cnf & LIS302DL_BIT7 ? 0x01 : 0x00;
 }
 
-void LIS302DL_Read(u8 *pBuffer, u8 readAddr, u16 numByteToRead) {
+
+void LIS302DL_Read(SPI_TypeDef* spi, uint8_t* pBuffer, uint8_t readAddr, uint16_t numByteToRead) {
 	// For reading multiple bytes we need to set bit 0 (RW) and 1 (MS)
 	if(numByteToRead > 1) {
-		readAddr |= (u8)(0x40 | 0x80);
+		readAddr |= (uint8_t)(LIS302DL_BIT0 | LIS302DL_BIT1);
 	} else {
-		readAddr |= (u8)0x40;
+		readAddr |= (uint8_t)LIS302DL_BIT0;
 	}
 	
 	// Set chip select Low at the start of the transmission
 	LIS302DL_CS_LOW();
 	
 	// Send the address of the indexed register
-	_LIS302DL_SendByte(readAddr);
+	_LIS302DL_SendByte(spi, readAddr);
 	
 	// Receive the data that will be read from the device (MSB First)
 	// Send a dummy byte (0x00) to generate the SPI clock to LIS302DL (Slave device) and receive data.
 	while (numByteToRead > 0) {
-		*pBuffer = _LIS302DL_SendByte(LIS302DL_DUMMY_BYTE);
+		*pBuffer = _LIS302DL_SendByte(spi, (uint8_t)LIS302DL_DUMMY_BYTE);
 		numByteToRead--;
 		pBuffer++;
 	}
@@ -62,22 +87,24 @@ void LIS302DL_Read(u8 *pBuffer, u8 readAddr, u16 numByteToRead) {
 	LIS302DL_CS_HIGH();
 }
 
-void LIS302DL_Write(u8 *pBuffer, u8 writeAddr, u16 numByteToWrite) {
+
+void LIS302DL_Write(SPI_TypeDef* spi, uint8_t* pBuffer, uint8_t writeAddr, uint16_t numByteToWrite) {
 	// For writing multiple bytes we need to set bit 1 (MS)
-	if(numByteToWrite > 0x01) {
-		writeAddr |= (u8)0x40;
+	if (numByteToWrite > 1) {
+		writeAddr |= (uint8_t)LIS302DL_BIT1;
 	}
+	
 	// Set chip select Low at the start of the transmission
 	LIS302DL_CS_LOW();
 	
-	LIS302DL_Read();
+	LIS302DL_Read(spi);
 	
 	// Send the Address of the indexed register
-	_LIS302DL_SendByte(writeAddr);
+	_LIS302DL_SendByte(spi, writeAddr);
 	
 	// Send the data that will be written into the device (MSB First)
-	while(numByteToWrite >= 0x01) {
-		_LIS302DL_SendByte(*pBuffer);
+	while (numByteToWrite >= 1) {
+		_LIS302DL_SendByte(spi, *pBuffer);
 		numByteToWrite--;
 		pBuffer++;
 	}
@@ -86,33 +113,34 @@ void LIS302DL_Write(u8 *pBuffer, u8 writeAddr, u16 numByteToWrite) {
 	LIS302DL_CS_HIGH();
 }
 
-void LIS302DL_Acceleration(i32 *out) {
-	u8 buffer[6];
-	u8 crtl, i = 0;
+
+void LIS302DL_Acceleration(SPI_TypeDef* spi, int32_t* out) {
+	uint8_t buffer[6];
+	uint8_t crtl, i = 0;
 	
 	// Read out the Control-Register-1 to get the FS value
-	LIS302DL_Read(&crtl, LIS302DL_CTRL_REG1_ADDR, 1);
+	LIS302DL_Read(spi, &crtl, LIS302DL_CTRL_REG1_ADDR, 1);
 	
 	// Read out the X,Y,Z output data. Between them is one byte each which is not used, therefore 6 bytes
-	LIS302DL_Read(buffer, LIS302DL_OUT_X_ADDR, 6);
+	LIS302DL_Read(spi, buffer, LIS302DL_OUT_X_ADDR, 6);
 	
 	// Check for the FS bit is set or not.
 	// Multiply axis values wtith the sensitivity and all these values with each other.
 	// Only use the first, third and fifth byte, the second and third is not used.
 	// OUT_X (29), OUT_Y (2B), OUT_Z (2D) --> 2A and 2C is not used --> buffer[2 * i]
-	switch (crtl & 0x20) {
+	switch (crtl & (uint8_t)LIS302DL_BIT2) {
 		// FS bit is 0 ==> Sensitivity typical value = 18 milligals/digit
-		case 0x00:
+		case 0:
 			for (i = 0; i < 3; i++) {
-				*out = (i32)(18 * (i8)buffer[2 * i]);
+				*out = (int32_t)(18 * (i8)buffer[2 * i]);
 				out++;
 			}
 			break;
 		
 		// FS bit is 1 ==> Sensitivity typical value = 72 milligals/digit
-		case 0x20:
+		case (uint8_t)LIS302DL_BIT2:
 			for(i = 0; i < 3; i++) {
-				*out = (i32)(72 * (i8)buffer[2 * i]);
+				*out = (int32_t)(72 * (i8)buffer[2 * i]);
 				out++;
 			}         
 			break;
@@ -121,36 +149,87 @@ void LIS302DL_Acceleration(i32 *out) {
 	}
 }
 
+
+void LIS302DL_Reboot(SPI_TypeDef* spi) {
+	uint8_t tmpreg;
+	
+	// Read the CTRL_REG2, enable the reboot memory flag and write it back
+	LIS302DL_Read(spi, &tmpreg, LIS302DL_CTRL_REG2_ADDR, 1);
+	tmpreg |= (uint8_t)LIS302DL_BIT1;
+	LIS302DL_Write(spi, &tmpreg, LIS302DL_CTRL_REG2_ADDR, 1);
+}
+
+
+void LIS302DL_ChangeScaleMode(SPI_TypeDef* spi, bool fullScaleEnable) {
+	uint8_t tmpreg;
+	
+	// Read the CTRL_REG1, enable/disable the FS memory flag and write it back
+	LIS302DL_Read(spi, &tmpreg, LIS302DL_CTRL_REG1_ADDR, 1);
+	tmpreg &= (uint8_t)~LIS302DL_BIT2; // Unset the FS bit
+	if (!fullScaleEnable) { // If the bit is not set, we are in ±2.3g mode (full scale)
+		tmpreg |= (uint8_t)LIS302DL_BIT2;
+	}
+	LIS302DL_Write(spi, &tmpreg, LIS302DL_CTRL_REG1_ADDR, 1);
+}
+
+
+void LIS302D_ChangeDataRate(SPI_TypeDef* spi, bool enableHighSpeed) {
+	uint8_t tmpreg;
+	
+	// Read the CTRL_REG1, enable/disable the DR memory flag and write it back
+	LIS302DL_Read(spi, &tmpreg, LIS302DL_CTRL_REG1_ADDR, 1);
+	tmpreg &= (uint8_t)~LIS302DL_BIT0; // Unset the FS bit
+	if (!enableHighSpeed) { // If the bit is set, we are on 400Hz, otherwise on 100Hz
+		tmpreg |= (uint8_t)LIS302DL_BIT0;
+	}
+	LIS302DL_Write(spi, &tmpreg, LIS302DL_CTRL_REG1_ADDR, 1);
+}
+
+
+void LIS302D_ChangePowerControl(SPI_TypeDef* spi, bool enableActiveMode) {
+	uint8_t tmpreg;
+	
+	// Read the CTRL_REG1, enable/disable the PD memory flag and write it back
+	LIS302DL_Read(spi, &tmpreg, LIS302DL_CTRL_REG1_ADDR, 1);
+	tmpreg &= (uint8_t)~LIS302DL_BIT1; // Unset the FS bit
+	if (enableActiveMode) { // If the bit is set, we are in active mode, else in power down control
+		tmpreg |= (uint8_t)LIS302DL_BIT1;
+	}
+	LIS302DL_Write(spi, &tmpreg, LIS302DL_CTRL_REG1_ADDR, 1);
+}
+
+/**** Private implementations ****/
+
 /**
  * @brief  Send one Byte through the SPI interface and return the received Byte
- * @param  u8 byte  The byte to send
- * @retval u8 The received byte value
+ * @param  uint8_t byte  The byte to send
+ * @retval uint8_t The received byte value
  */
-static u8 _LIS302DL_SendByte(u8 byte) {
+static uint8_t _LIS302DL_SendByte(SPI_TypeDef* spi, uint8_t byte) {
 	// TODO: Make this configurable so more than only one SPI port/sensor can be used.
-	volatile u32 _LIS302DL_Timeout = LIS302DL_MAX_TIMEOUT;
+	volatile uint32_t _LIS302DL_Timeout = LIS302DL_MAX_TIMEOUT;
 	
 	// Loop while DR register in not empty; or we ran into a timeout
 	_LIS302DL_Timeout = LIS302DL_MAX_TIMEOUT;
-	while (SPI_I2S_GetFlagStatus(LIS302DL_SPI, SPI_I2S_FLAG_TXE) == RESET) {
+	while (SPI_I2S_GetFlagStatus(spi, SPI_I2S_FLAG_TXE) == RESET) {
 		if ((_LIS302DL_Timeout--) == 0) {
 			return LIS302DL_TIMEOUT_UserCallback();
 		}
 	}
 	
 	// Send a Byte through the SPI peripheral
-	SPI_I2S_SendData(LIS302DL_SPI, byte);
+	SPI_I2S_SendData(spi, byte);
 	
 	// Wait to receive a Byte; or we ran into a timeout
 	_LIS302DL_Timeout = LIS302DL_MAX_TIMEOUT;
-	while (SPI_I2S_GetFlagStatus(LIS302DL_SPI, SPI_I2S_FLAG_RXNE) == RESET) {
+	while (SPI_I2S_GetFlagStatus(spi, SPI_I2S_FLAG_RXNE) == RESET) {
 		if ((_LIS302DL_Timeout--) == 0) {
 			return LIS302DL_TIMEOUT_UserCallback();
 		}
 	}
 	
 	/* Return the Byte read from the SPI bus */
-	return (u8)SPI_I2S_ReceiveData(LIS302DL_SPI);
+	return (uint8_t)SPI_I2S_ReceiveData(spi);
 }
 
 #ifndef LIS302DL_USE_CUSTOM_TIMEOUT_CALLBACK
@@ -159,7 +238,7 @@ static u8 _LIS302DL_SendByte(u8 byte) {
  * @param  None
  * @retval None
  */
-u32 LIS302DL_TIMEOUT_UserCallback(void) {
+uint32_t LIS302DL_TIMEOUT_UserCallback(void) {
 	while (1);
 }
 #endif // LIS302DL_USE_CUSTOM_TIMEOUT_CALLBACK
