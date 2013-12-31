@@ -1,9 +1,32 @@
+/** @file    sensors.c
+ *  @author  Lukas Zurschmiede <lukas@ranta.ch>
+ *  @email   <lukas@ranta.ch>
+ *  @version 0.0.1
+ *  @date    2014-01-01
+ *  @brief   This file contains all needed functions for working with a LIS302DL sensor
+ * 
+ *  Copyright (C) 2013-2014 @em Lukas @em Zurschmiede <lukas@ranta.ch>
+ * 
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ * 
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ * 
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #ifndef LIS302DL_H
 #define LIS302DL_H
 
+#include "../lib/inc/stm32f4xx.h"
+#include "../lib/inc/peripherals/misc.h"
 #include "../lib/inc/peripherals/stm32f4xx_gpio.h"
 #include "../lib/inc/peripherals/stm32f4xx_spi.h"
-#include "../lib/inc/peripherals/misc.h"
 
 // see http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/CD00135460.pdf
 
@@ -36,53 +59,6 @@
  */
 u32 LIS302DL_TIMEOUT_UserCallback(void);
 /* #define LIS302DL_USE_CUSTOM_TIMEOUT_CALLBACK */
-
-// SPI Interface
-#define LIS302DL_SPI                       SPI1
-#define LIS302DL_SPI_CLK                   RCC_APB2Periph_SPI1
-
-// Serial Clock
-#define LIS302DL_SPI_SCK_PIN               GPIO_Pin_5                 
-#define LIS302DL_SPI_SCK_GPIO_PORT         GPIOA                      
-#define LIS302DL_SPI_SCK_GPIO_CLK          RCC_AHB1Periph_GPIOA
-#define LIS302DL_SPI_SCK_SOURCE            GPIO_PinSource5
-#define LIS302DL_SPI_SCK_AF                GPIO_AF_SPI1
-
-// Serial Data Out: Master in, Slave out
-#define LIS302DL_SPI_MISO_PIN              GPIO_Pin_6                 
-#define LIS302DL_SPI_MISO_GPIO_PORT        GPIOA                      
-#define LIS302DL_SPI_MISO_GPIO_CLK         RCC_AHB1Periph_GPIOA
-#define LIS302DL_SPI_MISO_SOURCE           GPIO_PinSource6
-#define LIS302DL_SPI_MISO_AF               GPIO_AF_SPI1
-
-// Serial Data In: Master out, Slave in
-#define LIS302DL_SPI_MOSI_PIN              GPIO_Pin_7                 
-#define LIS302DL_SPI_MOSI_GPIO_PORT        GPIOA                      
-#define LIS302DL_SPI_MOSI_GPIO_CLK         RCC_AHB1Periph_GPIOA
-#define LIS302DL_SPI_MOSI_SOURCE           GPIO_PinSource7
-#define LIS302DL_SPI_MOSI_AF               GPIO_AF_SPI1
-
-// Chip select pin
-#define LIS302DL_SPI_CS_PIN                GPIO_Pin_3                 
-#define LIS302DL_SPI_CS_GPIO_PORT          GPIOE                      
-#define LIS302DL_SPI_CS_GPIO_CLK           RCC_AHB1Periph_GPIOE
-
-// Interrupt configuration
-#define LIS302DL_SPI_INT1_PIN              GPIO_Pin_0                 
-#define LIS302DL_SPI_INT1_GPIO_PORT        GPIOE                      
-#define LIS302DL_SPI_INT1_GPIO_CLK         RCC_AHB1Periph_GPIOE
-#define LIS302DL_SPI_INT1_EXTI_LINE        EXTI_Line0
-#define LIS302DL_SPI_INT1_EXTI_PORT_SOURCE EXTI_PortSourceGPIOE
-#define LIS302DL_SPI_INT1_EXTI_PIN_SOURCE  EXTI_PinSource0
-#define LIS302DL_SPI_INT1_EXTI_IRQn        EXTI0_IRQn 
-
-#define LIS302DL_SPI_INT2_PIN              GPIO_Pin_1                 
-#define LIS302DL_SPI_INT2_GPIO_PORT        GPIOE                      
-#define LIS302DL_SPI_INT2_GPIO_CLK         RCC_AHB1Periph_GPIOE
-#define LIS302DL_SPI_INT2_EXTI_LINE        EXTI_Line1
-#define LIS302DL_SPI_INT2_EXTI_PORT_SOURCE EXTI_PortSourceGPIOE
-#define LIS302DL_SPI_INT2_EXTI_PIN_SOURCE  EXTI_PinSource1
-#define LIS302DL_SPI_INT2_EXTI_IRQn        EXTI1_IRQn 
 
 /**** BEGIN: LIS302DL-Registers ****/
 

@@ -1,8 +1,28 @@
-
+/** @file    sensors.c
+ *  @author  Lukas Zurschmiede <lukas@ranta.ch>
+ *  @email   <lukas@ranta.ch>
+ *  @version 0.0.1
+ *  @date    2014-01-01
+ *  @brief   This file contains all needed functions for working with a LIS302DL sensor
+ * 
+ *  Copyright (C) 2013-2014 @em Lukas @em Zurschmiede <lukas@ranta.ch>
+ * 
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ * 
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ * 
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "../inc/lis302dl.h"
 
 /**** Private declarations ****/
-volatile uint32_t _LIS302DL_Timeout = LIS302DL_MAX_TIMEOUT;
 static u8 _LIS302DL_SendByte(u8 byte);
 
 
@@ -108,6 +128,7 @@ void LIS302DL_Acceleration(i32 *out) {
  */
 static u8 _LIS302DL_SendByte(u8 byte) {
 	// TODO: Make this configurable so more than only one SPI port/sensor can be used.
+	volatile u32 _LIS302DL_Timeout = LIS302DL_MAX_TIMEOUT;
 	
 	// Loop while DR register in not empty; or we ran into a timeout
 	_LIS302DL_Timeout = LIS302DL_MAX_TIMEOUT;
@@ -134,10 +155,9 @@ static u8 _LIS302DL_SendByte(u8 byte) {
 
 #ifndef LIS302DL_USE_CUSTOM_TIMEOUT_CALLBACK
 /**
- * @brief  Basic management of the timeout situation.
- *         Block all further communications by default and halt the application.
- * @param  None.
- * @retval None.
+ * @brief  Basic management for timeouts blocks all further communications by default and therefore halt the application
+ * @param  None
+ * @retval None
  */
 u32 LIS302DL_TIMEOUT_UserCallback(void) {
 	while (1);
