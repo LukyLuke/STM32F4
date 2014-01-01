@@ -722,24 +722,115 @@ uint32_t LIS302DL_TIMEOUT_UserCallback(void);
 #define LIS302DL_BIT7                     0x01
 
 /**
+ * @def LIS302DL_HIGHPASS_CUTOFF_
+ * @brief High pass cut-off frequency for use in LIS302DL_InterruptConfig to set the LIS302DL_CTRL_REG2 HP_coeff2,1 flags
+ * 
+ * The defines LIS302DL_HIGHPASS_CUTOFF_* are used to set the CutOffFrequency attribute in LIS302DL_InterruptConfig struct.
+ * This means, that the signal is sent out in this selected frequency.
+ * 
+ *    define  |  DR = 100Hz  |  DR = 400Hz
+ *   ---------+--------------+--------------
+ *    _HIGH   |     2Hz      |    8Hz       (default)
+ *    _FAST   |     1Hz      |    4Hz
+ *    _MIDDLE |     0.5Hz    |    2Hz
+ *    _SLOW   |     0.25Hz   |    1Hz
+ */
+#define LIS302DL_HIGHPASS_CUTOFF_HIGH     0x00
+#define LIS302DL_HIGHPASS_CUTOFF_FAST     0x01
+#define LIS302DL_HIGHPASS_CUTOFF_MIDDLE   0x02
+#define LIS302DL_HIGHPASS_CUTOFF_SLOW     0x03
+
+/**
+ * @def LIS302DL_INTERRUPT_NUM_
+ * @brief The LIS302DL has two interrupts, the Free-Fall wake up interrupts can be configured on both
+ */
+#define LIS302DL_INTERRUPT_NUM_1 0x01
+#define LIS302DL_INTERRUPT_NUM_2 0x02
+
+/**
  * @typedef LIS302DL_Config
- * @brief Used for the configuration of a LIS302DL sensor (see CTRL_REG1)
+ * @brief  Used for the configuration of a LIS302DL sensor (see CTRL_REG1)
  * 
  *  Use this to read and write the configuration on a LIS302DL sensor.
  */
 typedef struct {
-	uint8_t DataRate : 1;       ///< Data rate selection (0: 100Hz, 1: 400Hz)
-	uint8_t PowerDown : 1;      ///< Power mode selection (0: power down mode, 1: active mode)
-	uint8_t FullScale : 1;      ///< Measurement rate selection (0: Measurement rate to 2.3, 1: Measurement rate to 9.2)
-	uint8_t SelfTest_P : 1;     ///< SelfTest P-Mode (0: SelfTest disabled, 1: Various output values on all axis)
-	uint8_t SelfTest_M : 1;     ///< SelfTest M-Mode (0: SelfTest disabled, 1: Invert the sign on all axis values)
-	uint8_t ZAxisEnabled : 1;   ///< Z-Axis (0: Disabled, 1: Enabled)
-	uint8_t YAxisEnabled : 1;   ///< Y-Axis (0: Disabled, 1: Enabled)
-	uint8_t XAxisEnabled : 1;   ///< X-Axis (0: Disabled, 1: Enabled)
+	uint8_t DataRate : 1;       //!< Data rate selection (0: 100Hz, 1: 400Hz)
+	uint8_t PowerDown : 1;      //!< Power mode selection (0: power down mode, 1: active mode)
+	uint8_t FullScale : 1;      //!< Measurement rate selection (0: Measurement rate to 2.3, 1: Measurement rate to 9.2)
+	uint8_t SelfTest_P : 1;     //!< SelfTest P-Mode (0: SelfTest disabled, 1: Various output values on all axis)
+	uint8_t SelfTest_M : 1;     //!< SelfTest M-Mode (0: SelfTest disabled, 1: Invert the sign on all axis values)
+	uint8_t ZAxisEnabled : 1;   //!< Z-Axis (0: Disabled, 1: Enabled)
+	uint8_t YAxisEnabled : 1;   //!< Y-Axis (0: Disabled, 1: Enabled)
+	uint8_t XAxisEnabled : 1;   //!< X-Axis (0: Disabled, 1: Enabled)
 } LIS302DL_Config;
 
+/**
+ * @typedef LIS302DL_GlobalInterruptConfig
+ * @brief  Used for the "movement" interrupt configuration (FreeFall/WakeUp) in CTRL_REG2
+ */
+typedef struct {
+	uint8_t SendData : 1; //!< Defines the Filtered Data Selection (FDS) flag in CTRL_REG2
+	uint8_t Interrupt_1 : 1; //!< Enable interrupt 1 if data on axis are changed
+	uint8_t Interrupt_2 : 1; //!< Enable interrupt 2 if data on axis are changed
+	uint8_t CutOffFrequency : 2; //!< CutOff frequency when the interrupt should be fired. Use LIS302DL_HIGHPASS_CUTOFF_* values
+} LIS302DL_GlobalInterruptConfig;
 
+/**
+ * @typedef LIS302DL_ClickInterruptConfig
+ * @brief  For the configuration of click interrupts
+ */
+typedef struct {
+	uint8_t Latched : 1; //!< Set this for latched interrupts (move the interrupt request into CLICK_SRC register and refresh this on reading)
+	uint8_t SingleClick_X : 1; //!< Set this to enable SingleClick events on X-axis
+	uint8_t SingleClick_Y : 1; //!< Set this to enable SingleClick events on Y-axis
+	uint8_t SingleClick_Z : 1; //!< Set this to enable SingleClick events on Z-axis
+	uint8_t DoubleClick_X : 1; //!< Set this to enable DoubleClick events on X-axis
+	uint8_t DoubleClick_Y : 1; //!< Set this to enable DoubleClick events on Y-axis
+	uint8_t DoubleClick_Z : 1; //!< Set this to enable DoubleClick events on Z-axis
+} LIS302DL_ClickInterruptConfig;
 
+/**
+ * @typedef LIS302DL_ClickInterruptData
+ * @brief  If a click interrupt is fired, this data structure is used for getting the data
+ */
+typedef struct {
+	uint8_t Active : 1; //!< If there is an interrupt active or not
+	uint8_t Double_X : 1; //!< A DoubleClick event has occurred on the X-axis
+	uint8_t Double_Y : 1; //!< A DoubleClick event has occurred on the Y-axis
+	uint8_t Double_Z : 1; //!< A DoubleClick event has occurred on the Z-axis
+	uint8_t Single_X : 1; //!< A SingleClick event has occurred on the X-axis
+	uint8_t Single_Y : 1; //!< A SingleClick event has occurred on the Y-axis
+	uint8_t Single_Z : 1; //!< A SingleClick event has occurred on the Z-axis
+} LIS302DL_ClickInterruptData;
+
+/**
+ * @typedef LIS302DL_WakeupInterruptConfiguration
+ * @brief  For the general FreeFall wake-up interrupt configuration
+ */
+typedef struct {
+	uint8_t CombineInterrupts : 1; //!< Set this if all defined interrupts mus occur together (AND); Normally one interrupt is enough (OR) (default)
+	uint8_t Latched : 1; //!< Set this for latched interrupts (move the interrupt request into FF_WU_SRC register and refresh this on reading)
+	uint8_t Z_High : 1; //!< Enable interrupts on Z-Axis acceleration values higher than preset threshold
+	uint8_t Z_Low : 1; //!< Enable interrupts on Z-Axis acceleration values lower than preset threshold
+	uint8_t Y_High : 1; //!< Enable interrupts on Y-Axis acceleration values higher than preset threshold
+	uint8_t Y_Low : 1; //!< Enable interrupts on Y-Axis acceleration values lower than preset threshold
+	uint8_t X_High : 1; //!< Enable interrupts on X-Axis acceleration values higher than preset threshold
+	uint8_t X_Low : 1; //!< Enable interrupts on X-Axis acceleration values lower than preset threshold
+} LIS302DL_WakeupInterruptConfig;
+
+/**
+ * @typedef LIS302DL_WakeupInterruptData
+ * @brief  If a Free-Fall wake-up interrupt is fired, this data structure is used for getting the data
+ */
+typedef struct {
+	uint8_t Active : 1; //!< If there is an interrupt active or not
+	uint8_t Z_High : 1; //!< Interrupt on Z-Axis with acceleration values higher than preset threshold occurred
+	uint8_t Z_Low : 1; //!< Interrupt on Z-Axis with acceleration values lower than preset threshold occurred
+	uint8_t Y_High : 1; //!< Interrupt on Z-Axis with acceleration values higher than preset threshold occurred
+	uint8_t Y_Low : 1; //!< Interrupt on Z-Axis with acceleration values lower than preset threshold occurred
+	uint8_t X_High : 1; //!< Interrupt on Z-Axis with acceleration values higher than preset threshold occurred
+	uint8_t X_Low : 1; //!< Interrupt on Z-Axis with acceleration values lower than preset threshold occurred
+} LIS302DL_WakeupInterruptData;
 
 /**** Macros ****/
 // TODO: Create functions from these to be able to use more that only one sensor on different SPI ports
@@ -825,8 +916,71 @@ void LIS302D_ChangeDataRate(SPI_TypeDef* spi, uint8_t enableHighSpeed);
  */
 void LIS302D_ChangePowerControl(SPI_TypeDef* spi, uint8_t enableActiveMode);
 
+/**
+ * @brief  Configure the global interrupts
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pConfig  Pointer to an interrupt configuration
+ * @retval None
+ */
+void LIS302DL_GlobalInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_GlobalInterruptConfig* pConfig);
 
+/**
+ * @brief  Get the global configuration from the interrupts
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pConfig  Pointer to an interrupt configuration
+ * @retval None
+ */
+void LIS302DL_GetGlobalInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_GlobalInterruptConfig* pConfig);
 
+/**
+ * @brief  Configure the FreeFall/Wakeup interrupts
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pConfig  Pointer to a wakeup interrupt configuration
+ * @param  intNum  Number of the interrupt, can be 1 or 2 (use LIS302DL_INTERRUPT_NUM_*)
+ * @retval None
+ */
+void LIS302DL_WakeupInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_WakeupInterruptConfig* pConfig, uint8_t intNum);
 
+/**
+ * @brief  Get the configure from FreeFall/Wakeup interrupts
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pConfig  Pointer to a wakeup interrupt configuration
+ * @param  intNum  Number of the interrupt, can be 1 or 2
+ * @retval None
+ */
+void LIS302DL_GetWakeupInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_WakeupInterruptConfig* pConfig, uint8_t intNum);
+
+/**
+ * @brief  Get FreeFall/Wakeup interrupt data
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pData  Pointer to a wakeup interrupt data storage
+ * @param  intNum  Number of the interrupt, can be 1 or 2
+ * @retval None
+ */
+void LIS302DL_GetWakeupInterruptData(SPI_TypeDef* spi, LIS302DL_WakeupInterruptData* pData, uint8_t intNum);
+
+/**
+ * @brief  Configure the click interrupts
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pConfig  Pointer to a click interrupt configuration
+ * @retval None
+ */
+void LIS302DL_ClickInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_ClickInterruptConfig* pConfig);
+
+/**
+ * @brief  Get the configure from click interrupts
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pConfig  Pointer to a click interrupt configuration
+ * @retval None
+ */
+void LIS302DL_GetClickInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_ClickInterruptConfig* pConfig);
+
+/**
+ * @brief  Get click interrupt data
+ * @param  spi  Pointer to the SPI on which the data should be sent/set/received
+ * @param  pData  Pointer to a click interrupt data storage
+ * @retval None
+ */
+void LIS302DL_GetClickInterruptData(SPI_TypeDef* spi, LIS302DL_ClickInterruptData* pData);
 
 #endif // LIS302DL_H

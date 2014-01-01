@@ -32,14 +32,14 @@ static uint8_t _LIS302DL_SendByte(SPI_TypeDef* spi, uint8_t byte);
 void LIS302DL_Init(SPI_TypeDef* spi, const LIS302DL_Config* pConfig) {
 	// Map the configuration to be always BigEndian
 	uint8_t cnf = 0x00;
-	cnf |= pConfig->DataRate ? LIS302DL_BIT0 : 0x00;
-	cnf |= pConfig->PowerDown ? LIS302DL_BIT1 : 0x00;
-	cnf |= pConfig->FullScale ? LIS302DL_BIT2 : 0x00;
-	cnf |= pConfig->SelfTest_P ? LIS302DL_BIT3 : 0x00;
-	cnf |= pConfig->SelfTest_M ? LIS302DL_BIT4 : 0x00;
-	cnf |= pConfig->ZAxisEnabled ? LIS302DL_BIT5 : 0x00;
-	cnf |= pConfig->YAxisEnabled ? LIS302DL_BIT6 : 0x00;
-	cnf |= pConfig->XAxisEnabled ? LIS302DL_BIT7 : 0x00;
+	cnf |= pConfig->DataRate ? (uint8_t)LIS302DL_BIT0 : 0x00;
+	cnf |= pConfig->PowerDown ? (uint8_t)LIS302DL_BIT1 : 0x00;
+	cnf |= pConfig->FullScale ? (uint8_t)LIS302DL_BIT2 : 0x00;
+	cnf |= pConfig->SelfTest_P ? (uint8_t)LIS302DL_BIT3 : 0x00;
+	cnf |= pConfig->SelfTest_M ? (uint8_t)LIS302DL_BIT4 : 0x00;
+	cnf |= pConfig->ZAxisEnabled ? (uint8_t)LIS302DL_BIT5 : 0x00;
+	cnf |= pConfig->YAxisEnabled ? (uint8_t)LIS302DL_BIT6 : 0x00;
+	cnf |= pConfig->XAxisEnabled ? (uint8_t)LIS302DL_BIT7 : 0x00;
 	
 	LIS302DL_Write(&cnf, LIS302DL_CTRL_REG1_ADDR, 1);
 }
@@ -50,14 +50,136 @@ void LIS302DL_GetConfiguration(SPI_TypeDef* spi, volatile LIS302DL_Config* pConf
 	LIS302DL_Read(&cnf, LIS302DL_CTRL_REG1_ADDR, 1);
 	
 	// Map received data into the configuration; Data is delivered in BigEndian
-	pConfig->DataRate = cnf & LIS302DL_BIT0 ? 0x01 : 0x00;
-	pConfig->PowerDown = cnf & LIS302DL_BIT1 ? 0x01 : 0x00;
-	pConfig->FullScale = cnf & LIS302DL_BIT2 ? 0x01 : 0x00;
-	pConfig->SelfTest_P = cnf & LIS302DL_BIT3 ? 0x01 : 0x00;
-	pConfig->SelfTest_M = cnf & LIS302DL_BIT4 ? 0x01 : 0x00;
-	pConfig->ZAxisEnabled = cnf & LIS302DL_BIT5 ? 0x01 : 0x00;
-	pConfig->YAxisEnabled = cnf & LIS302DL_BIT6 ? 0x01 : 0x00;
-	pConfig->XAxisEnabled = cnf & LIS302DL_BIT7 ? 0x01 : 0x00;
+	pConfig->DataRate = cnf & (uint8_t)LIS302DL_BIT0 ? 0x01 : 0x00;
+	pConfig->PowerDown = cnf & (uint8_t)LIS302DL_BIT1 ? 0x01 : 0x00;
+	pConfig->FullScale = cnf & (uint8_t)LIS302DL_BIT2 ? 0x01 : 0x00;
+	pConfig->SelfTest_P = cnf & (uint8_t)LIS302DL_BIT3 ? 0x01 : 0x00;
+	pConfig->SelfTest_M = cnf & (uint8_t)LIS302DL_BIT4 ? 0x01 : 0x00;
+	pConfig->ZAxisEnabled = cnf & (uint8_t)LIS302DL_BIT5 ? 0x01 : 0x00;
+	pConfig->YAxisEnabled = cnf & (uint8_t)LIS302DL_BIT6 ? 0x01 : 0x00;
+	pConfig->XAxisEnabled = cnf & (uint8_t)LIS302DL_BIT7 ? 0x01 : 0x00;
+}
+
+
+void LIS302DL_GlobalInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_GlobalInterruptConfig* pConfig) {
+	// Get the current configuration
+	uint8_t cnf = 0x00;
+	LIS302DL_Read(&cnf, LIS302DL_CTRL_REG2_ADDR, 1);
+	
+	// Unset the bits we want configure
+	cnf &= (uint8_t)~(LIS302DL_BIT3 | LIS302DL_BIT4 | LIS302DL_BIT5 | LIS302DL_BIT6 | LIS302DL_BIT7);
+	
+	// Map the configuration to be always BigEndian
+	cnf |= pConfig->SendData ? (uint8_t)LIS302DL_BIT3 : 0x00;
+	cnf |= pConfig->Interrupt_1 ? (uint8_t)LIS302DL_BIT4 : 0x00;
+	cnf |= pConfig->Interrupt_2 ? (uint8_t)LIS302DL_BIT5 : 0x00;
+	cnf |= (pConfig->CutOffFrequency <= (uint8_t)LIS302DL_HIGHPASS_CUTOFF_SLOW) ? pConfig->CutOffFrequency : 0x00;
+	
+	LIS302DL_Write(&cnf, LIS302DL_CTRL_REG2_ADDR, 1);
+}
+
+
+void LIS302DL_GetGlobalInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_GlobalInterruptConfig* pConfig) {
+	uint8_t cnf = 0x00;
+	LIS302DL_Read(&cnf, LIS302DL_CTRL_REG2_ADDR, 1);
+	
+	// Map received data into the configuration; Data is delivered in BigEndian
+	pConfig->SendData = cnf & (uint8_t)LIS302DL_BIT3 ? 0x01 : 0x00;
+	pConfig->Interrupt_1 = cnf & (uint8_t)LIS302DL_BIT4 ? 0x01 : 0x00;
+	pConfig->Interrupt_2 = cnf & (uint8_t)LIS302DL_BIT5 ? 0x01 : 0x00;
+	pConfig->CutOffFrequency = cnf & (uint8_t)~(LIS302DL_BIT0 | LIS302DL_BIT1 | LIS302DL_BIT2 | LIS302DL_BIT3 | LIS302DL_BIT4 | LIS302DL_BIT5);
+}
+
+
+void LIS302DL_WakeupInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_WakeupInterruptConfig* pConfig, uint8_t intNum) {
+	// Map the configuration to be always BigEndian
+	uint8_t cnf = 0x00;
+	cnf |= pConfig->CombineInterrupts ? (uint8_t)LIS302DL_BIT0 : 0x00;
+	cnf |= pConfig->Latched ? (uint8_t)LIS302DL_BIT1 : 0x00;
+	cnf |= pConfig->Z_High ? (uint8_t)LIS302DL_BIT2 : 0x00;
+	cnf |= pConfig->Z_Low ? (uint8_t)LIS302DL_BIT3 : 0x00;
+	cnf |= pConfig->Y_High ? (uint8_t)LIS302DL_BIT4 : 0x00;
+	cnf |= pConfig->Y_Low ? (uint8_t)LIS302DL_BIT5 : 0x00;
+	cnf |= pConfig->X_High ? (uint8_t)LIS302DL_BIT6 : 0x00;
+	cnf |= pConfig->X_Low ? (uint8_t)LIS302DL_BIT7 : 0x00;
+	
+	LIS302DL_Write(&cnf, ((intNum & LIS302DL_INTERRUPT_NUM_2) ? LIS302DL_FF_WU_CFG2_REG_ADDR : LIS302DL_FF_WU_CFG1_REG_ADDR), 1);
+}
+
+
+void LIS302DL_GetWakeupInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_WakeupInterruptConfig* pConfig, uint8_t intNum) {
+	uint8_t cnf = 0x00;
+	LIS302DL_Read(&cnf, ((intNum & LIS302DL_INTERRUPT_NUM_2) ? LIS302DL_FF_WU_CFG2_REG_ADDR : LIS302DL_FF_WU_CFG1_REG_ADDR), 1);
+	
+	// Map received data into the configuration; Data is delivered in BigEndian
+	pConfig->CombineInterrupts = cnf & (uint8_t)LIS302DL_BIT0 ? 0x01 : 0x00;
+	pConfig->Latched = cnf & (uint8_t)LIS302DL_BIT1 ? 0x01 : 0x00;
+	pConfig->Z_High = cnf & (uint8_t)LIS302DL_BIT2 ? 0x01 : 0x00;
+	pConfig->Z_Low = cnf & (uint8_t)LIS302DL_BIT3 ? 0x01 : 0x00;
+	pConfig->Y_High = cnf & (uint8_t)LIS302DL_BIT4 ? 0x01 : 0x00;
+	pConfig->Y_Low = cnf & (uint8_t)LIS302DL_BIT5 ? 0x01 : 0x00;
+	pConfig->X_High = cnf & (uint8_t)LIS302DL_BIT6 ? 0x01 : 0x00;
+	pConfig->X_Low = cnf & (uint8_t)LIS302DL_BIT7 ? 0x01 : 0x00;
+}
+
+
+void LIS302DL_GetWakeupInterruptData(SPI_TypeDef* spi, LIS302DL_WakeupInterruptData* pData, uint8_t intNum) {
+	uint8_t tmpreg = 0x00;
+	LIS302DL_Read(&tmpreg, ((intNum & LIS302DL_INTERRUPT_NUM_2) ? LIS302DL_FF_WU_SRC2_REG_ADDR : LIS302DL_FF_WU_SRC1_REG_ADDR), 1);
+	
+	// Map received data into the configuration; Data is delivered in BigEndian
+	pData->Active = tmpreg & (uint8_t)LIS302DL_BIT1 ? 0x01 : 0x00;
+	pData->Z_High = tmpreg & (uint8_t)LIS302DL_BIT2 ? 0x01 : 0x00;
+	pData->Z_Low = tmpreg & (uint8_t)LIS302DL_BIT3 ? 0x01 : 0x00;
+	pData->Y_High = tmpreg & (uint8_t)LIS302DL_BIT4 ? 0x01 : 0x00;
+	pData->Y_Low = tmpreg & (uint8_t)LIS302DL_BIT5 ? 0x01 : 0x00;
+	pData->X_High = tmpreg & (uint8_t)LIS302DL_BIT6 ? 0x01 : 0x00;
+	pData->X_Low = tmpreg & (uint8_t)LIS302DL_BIT7 ? 0x01 : 0x00;
+}
+
+
+void LIS302DL_ClickInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_ClickInterruptConfig* pConfig) {
+	// Map the configuration to be always BigEndian
+	uint8_t cnf = 0x00;
+	cnf |= pConfig->Latched ? (uint8_t)LIS302DL_BIT1 : 0x00;
+	cnf |= pConfig->DoubleClick_Z ? (uint8_t)LIS302DL_BIT2 : 0x00;
+	cnf |= pConfig->SingleClick_Z ? (uint8_t)LIS302DL_BIT3 : 0x00;
+	cnf |= pConfig->DoubleClick_Y ? (uint8_t)LIS302DL_BIT4 : 0x00;
+	cnf |= pConfig->SingleClick_Y ? (uint8_t)LIS302DL_BIT5 : 0x00;
+	cnf |= pConfig->DoubleClick_X ? (uint8_t)LIS302DL_BIT6 : 0x00;
+	cnf |= pConfig->SingleClick_X ? (uint8_t)LIS302DL_BIT7 : 0x00;
+	
+	LIS302DL_Write(&cnf, LIS302DL_CLICK_CFG_REG_ADDR, 1);
+}
+
+
+void LIS302DL_GetClickInterruptConfiguration(SPI_TypeDef* spi, LIS302DL_ClickInterruptConfig* pConfig) {
+	uint8_t cnf = 0x00;
+	LIS302DL_Read(&cnf, LIS302DL_CLICK_CFG_REG_ADDR, 1);
+	
+	// Map received data into the configuration; Data is delivered in BigEndian
+	pConfig->Latched = cnf & (uint8_t)LIS302DL_BIT1 ? 0x01 : 0x00;
+	pConfig->DoubleClick_Z = cnf & (uint8_t)LIS302DL_BIT2 ? 0x01 : 0x00;
+	pConfig->SingleClick_Z = cnf & (uint8_t)LIS302DL_BIT3 ? 0x01 : 0x00;
+	pConfig->DoubleClick_Y = cnf & (uint8_t)LIS302DL_BIT4 ? 0x01 : 0x00;
+	pConfig->SingleClick_Y = cnf & (uint8_t)LIS302DL_BIT5 ? 0x01 : 0x00;
+	pConfig->DoubleClick_X = cnf & (uint8_t)LIS302DL_BIT6 ? 0x01 : 0x00;
+	pConfig->DoubleClick_X = cnf & (uint8_t)LIS302DL_BIT7 ? 0x01 : 0x00;
+}
+
+
+void LIS302DL_GetClickInterruptData(SPI_TypeDef* spi, LIS302DL_ClickInterruptData* pData) {
+	uint8_t tmpreg = 0x00;
+	LIS302DL_Read(&tmpreg, LIS302DL_CLICK_SRC_REG_ADDR, 1);
+	
+	// Map received data into the configuration; Data is delivered in BigEndian
+	pData->Active = tmpreg & (uint8_t)LIS302DL_BIT1 ? 0x01 : 0x00;
+	pData->Double_Z = tmpreg & (uint8_t)LIS302DL_BIT2 ? 0x01 : 0x00;
+	pData->Single_Z = tmpreg & (uint8_t)LIS302DL_BIT3 ? 0x01 : 0x00;
+	pData->Double_Y = tmpreg & (uint8_t)LIS302DL_BIT4 ? 0x01 : 0x00;
+	pData->Single_Y = tmpreg & (uint8_t)LIS302DL_BIT5 ? 0x01 : 0x00;
+	pData->Double_X = tmpreg & (uint8_t)LIS302DL_BIT6 ? 0x01 : 0x00;
+	pData->Single_X = tmpreg & (uint8_t)LIS302DL_BIT7 ? 0x01 : 0x00;
 }
 
 
@@ -206,7 +328,6 @@ void LIS302D_ChangePowerControl(SPI_TypeDef* spi, bool enableActiveMode) {
  * @retval uint8_t The received byte value
  */
 static uint8_t _LIS302DL_SendByte(SPI_TypeDef* spi, uint8_t byte) {
-	// TODO: Make this configurable so more than only one SPI port/sensor can be used.
 	volatile uint32_t _LIS302DL_Timeout = LIS302DL_MAX_TIMEOUT;
 	
 	// Loop while DR register in not empty; or we ran into a timeout
