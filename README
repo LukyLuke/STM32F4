@@ -2,3 +2,46 @@ STM32F4
 =======
 
 Quadro-Copter steering and regulation with the STM32F4 Discovery board and some external sensors.
+
+Prequisits
+----------
+
+For compile the _arm-toolchain_ is needed. Most easy installation goes with _summon-arm-toolchain_ from https://github.com/esden/summon-arm-toolchain
+
+On Slackware you have to install +libftdi-0.20+ manually
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> wget http://www.intra2net.com/de/produkte/opensource/ftdi/TGZ/libftdi-0.20.tar.gz
+> tar -xzf libftdi-0.20.tar.gz
+> cd libftdi-0.20
+> ./configure --prefix=/usr --libdir=/usr/lib[64]
+
+On x64 systems it may give troubles with the x86 libusb version:
+> vim ftdipp/Makefile
+
+Change all _/usr/lib_ occurences to _/usr/lib64_
+
+> make
+> mkdir /tmp/libftdi
+> make install DESTDIR=/tmp/libftdi
+> cd /tmp/libftdi
+> makepkg -l y -c n /tmp/libftdi-0.20-x64-1.tgz
+> installpkg /tmp/libftdi-0.20-x64-1.tgz
+
+Copy away _/tmp/libftdi-0.20-x64-1.tgz_ after to some "secure" place.
+
+Install arm-toolchain
+~~~~~~~~~~~~~~~~~~~~~
+> git clone https://github.com/esden/summon-arm-toolchain.git /tmp/arm-toolchain
+> cd /tmp/arm-toolchain
+> ./summon-arm-toolchain PREFIX=/opt/arm-toolchain LIBSTM32_EN=1 CPUS=1
+> [ go for a coffee ]
+
+Note: On my system I always had to build with only one thread (CPUS=1), otherwise libgcc failed.
+
+Update/rebuild arm-toolchain
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> cd /tmp/arm-toolchain
+> git pull
+> rm stamps/*.build
+> ./summon-arm-toolchain PREFIX=/opt/arm-toolchain LIBSTM32_EN=1 CPUS=1
+> [ go for a coffee ]
