@@ -31,7 +31,7 @@
 #include "../lib/inc/peripherals/stm32f4xx_gpio.h"
 #include "../lib/inc/peripherals/stm32f4xx_spi.h"
 
-#include "lis302dl.h"
+#include "../sensors/inc/lis302dl.h"
 
 // SPI Interface
 #define SENSORS_SPI                       SPI1
