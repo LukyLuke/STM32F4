@@ -3,6 +3,7 @@
  *  @email   <lukas@ranta.ch>
  *  @version 0.0.1
  *  @date    2014-01-01
+ *  @see     http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/CD00135460.pdf
  *  @brief   This file contains all needed functions for working with a LIS302DL sensor
  * 
  *  Copyright (C) 2013-2014 @em Lukas @em Zurschmiede <lukas@ranta.ch>

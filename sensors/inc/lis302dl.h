@@ -3,6 +3,7 @@
  *  @email   <lukas@ranta.ch>
  *  @version 0.0.1
  *  @date    2014-01-01
+ *  @see     http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/CD00135460.pdf
  *  @brief   This file contains all needed functions for working with a LIS302DL sensor
  * 
  *  Copyright (C) 2013-2014 @em Lukas @em Zurschmiede <lukas@ranta.ch>
@@ -23,10 +24,11 @@
 #ifndef LIS302DL_H
 #define LIS302DL_H
 
-#include "../lib/inc/stm32f4xx.h"
-#include "../lib/inc/peripherals/misc.h"
-#include "../lib/inc/peripherals/stm32f4xx_gpio.h"
-#include "../lib/inc/peripherals/stm32f4xx_spi.h"
+// TODO: Decouple this from the STM32F4 processor and discovery board
+#include "../../lib/inc/stm32f4xx.h"
+#include "../../lib/inc/peripherals/misc.h"
+#include "../../lib/inc/peripherals/stm32f4xx_gpio.h"
+#include "../../lib/inc/peripherals/stm32f4xx_spi.h"
 
 // TODO: Make this configurabe on each command through a different API
 // use sensors.h for this
